@@ -3,6 +3,8 @@ package com.company.resourceapi.controllers;
 import com.company.resourceapi.entities.Project;
 import com.company.resourceapi.services.ProjectService;
 
+import javax.validation.Valid;
+
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,11 +43,8 @@ public class ProjectRestController {
 	}
 
 	@ApiOperation("Create a Project")
-	@PostMapping("/")
-	public Project createProject(
-		@RequestBody Project project
-	) {
-		System.out.println(project);
+	@PostMapping
+	public Project createProject(@Valid @RequestBody Project project) {
 		return projectService.createProject(project);
 	}
 	

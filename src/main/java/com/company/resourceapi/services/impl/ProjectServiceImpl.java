@@ -20,7 +20,7 @@ public class ProjectServiceImpl implements ProjectService {
 
 	private final ProjectRepository projectRepository;
 	private final SdlcSystemRepository sdlcSystemRepository;
-
+	
 	public Project getProject(long id) {
 		try {
 			return projectRepository.findById(id).orElseThrow(() -> new NotFoundException(Project.class, id));
@@ -33,9 +33,12 @@ public class ProjectServiceImpl implements ProjectService {
 	@Override
 	public Project createProject(Project project) {
 		// TODO Auto-generated method stub
-		long id = project.getSdlcSystem().getId();
-		SdlcSystem sdlcSystem = sdlcSystemRepository.findById(id).get();
-		project.setSdlcSystem(sdlcSystem);
-		return projectRepository.save(project);
+		try {
+			sdlcSystemRepository.findById(project.getSdlcSystem().getId()).ifPresent(project::setSdlcSystem);
+			return projectRepository.save(project);
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+		return null;
 	}
 }
