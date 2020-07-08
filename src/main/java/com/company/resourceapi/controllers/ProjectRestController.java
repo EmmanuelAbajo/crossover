@@ -3,13 +3,19 @@ package com.company.resourceapi.controllers;
 import com.company.resourceapi.entities.Project;
 import com.company.resourceapi.services.ProjectService;
 
+import java.net.URI;
+
 import javax.validation.Valid;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.http.RequestEntity;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
@@ -35,17 +41,23 @@ public class ProjectRestController {
 	@ApiOperation("Get a Project")
 	@GetMapping(ENDPOINT_ID)
 	public Project getProject(
-			@ApiParam(name = API_PARAM_ID, required = true)
-			@PathVariable(PATH_VARIABLE_ID)
-			final long projectId
-	) {
+			@ApiParam(name = API_PARAM_ID, required = true) @PathVariable(PATH_VARIABLE_ID) final long projectId) {
 		return projectService.getProject(projectId);
 	}
 
 	@ApiOperation("Create a Project")
 	@PostMapping
-	public Project createProject(@Valid @RequestBody Project project) {
-		return projectService.createProject(project);
+	public ResponseEntity<Project> createProject(RequestEntity<Project> request) {
+		URI location = URI.create(request.getUrl().toString() + "/");
+		Project returnProject = projectService.createProject(request.getBody());
+		return ResponseEntity.created(location).body(returnProject);
 	}
-	
+
+	@ApiOperation("Update a Project")
+	@PatchMapping(ENDPOINT_ID)
+	public ResponseEntity<Project> updateProject(@PathVariable(value = "id") Long projectId,
+			@RequestBody Project projectDetails) {
+		Project returnProject = projectService.updateProject(projectId, projectDetails);
+		return ResponseEntity.ok(returnProject);
+	}
 }
