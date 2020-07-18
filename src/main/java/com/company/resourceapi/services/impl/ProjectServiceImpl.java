@@ -2,7 +2,6 @@ package com.company.resourceapi.services.impl;
 
 import java.util.List;
 import java.util.Optional;
-// import java.sql.SQLIntegrityConstraintViolationException;
 
 import com.company.resourceapi.entities.Project;
 import com.company.resourceapi.entities.SdlcSystem;
@@ -15,8 +14,7 @@ import com.company.resourceapi.repositories.ProjectSpecification;
 import com.company.resourceapi.repositories.SdlcSystemRepository;
 import com.company.resourceapi.services.ProjectService;
 
-import lombok.Data;
-import lombok.RequiredArgsConstructor;
+import lombok.NoArgsConstructor;
 
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -25,14 +23,17 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.server.ServerErrorException;
 
 @Service
-@RequiredArgsConstructor
+@NoArgsConstructor
 public class ProjectServiceImpl implements ProjectService {
 
 	@Autowired
-	private final ProjectRepository projectRepository;
+	private ProjectRepository projectRepository;
 
 	@Autowired
-	private final SdlcSystemRepository sdlcSystemRepository;
+	private SdlcSystemRepository sdlcSystemRepository;
+
+	@Autowired
+	private ProjectSpecification projectSpecification;
 
 	public Project getProject(long id) {
 		return projectRepository.findById(id)
@@ -44,8 +45,8 @@ public class ProjectServiceImpl implements ProjectService {
 			throw new InvalidRequestBodyException("externalId");
 		if (projectDetails.getSdlcSystem() == null)
 			throw new InvalidRequestBodyException("sdlcSystem");
-		Project project = setSdlcSystem(projectDetails, projectDetails.getSdlcSystem().getId());
-		return saveProject(project);
+		projectDetails = verifyKeyConstraints(projectDetails);
+		return saveProject(projectDetails);
 	}
 
 	public Project updateProject(long id, Project projectDetails) {
@@ -60,6 +61,7 @@ public class ProjectServiceImpl implements ProjectService {
 				if (sdlcSystem != null) {
 					project = setSdlcSystem(project, sdlcSystem.getId());
 				}
+				project = verifyKeyConstraints(project);
 				return saveProject(project);
 			})
 			.orElseThrow(() -> new NotFoundException(Project.class, id));
@@ -76,18 +78,28 @@ public class ProjectServiceImpl implements ProjectService {
 		}
 	}
 
-	private Project setSdlcSystem(Project project, long sdlcSystemId) {
+	private Project verifyKeyConstraints(Project project) {
+		long sdlcSystemId = project.getSdlcSystem().getId();
+
 		return sdlcSystemRepository.findById(sdlcSystemId)
 			.map(sdlcSystem -> {
 				List<Project> duplicateProjects = projectRepository.findAll(
 					Specification.where(
-						ProjectSpecification.withExternalId(project.getExternalId())
+						projectSpecification.withExternalId(project.getExternalId())
 					).and(
-						ProjectSpecification.withSdlcId(sdlcSystemId)
+						projectSpecification.withSdlcId(sdlcSystemId)
 					)
 				);
-				if (duplicateProjects.size() > 0)
+				if (!duplicateProjects.isEmpty() && project.getId() != duplicateProjects.get(0).getId()) 
 					throw new ConflictException(sdlcSystemId, project.getExternalId());
+				return project;
+			})
+			.orElseThrow(() -> new NotFoundSdlcSystemException(SdlcSystem.class, sdlcSystemId));
+	}
+
+	private Project setSdlcSystem(Project project, long sdlcSystemId) {
+		return sdlcSystemRepository.findById(sdlcSystemId)
+			.map(sdlcSystem -> {
 				project.setSdlcSystem(sdlcSystem);
 				return project;
 			})

@@ -16,14 +16,19 @@ import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
+import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
 @Entity
 @Table(name = "project")
 @EntityListeners(AuditingEntityListener.class)
 @Data
+@NoArgsConstructor
 @RequiredArgsConstructor
+@AllArgsConstructor
 public class Project {
 
     @Id
@@ -32,6 +37,7 @@ public class Project {
 
     @Column(name = "external_id", nullable = false)
     @NotBlank
+    @NonNull
     private String externalId;
 
     @Column(name = "name")
@@ -40,6 +46,7 @@ public class Project {
     @ManyToOne
     @JoinColumn(name = "sdlc_system_id")
     @NotNull
+    @NonNull
     private SdlcSystem sdlcSystem;
 
     @Column(name = "created_date", nullable = false)
